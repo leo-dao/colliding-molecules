@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 
+const cubeSpeed = 0.04;
+const cubeRotationSpeed = 0.01;
+
 export const createFace = (color: string) => {
 
     // Creating a colored plane of size 1x1 
@@ -69,6 +72,22 @@ export const createCube = () => {
     cube.add(rightFace);
     cube.add(topFace);
     cube.add(bottomFace);
+
+    // Giving random direction to the cube (positive or negative)
+    // Generating a random number between -1 and 1 and multiplying it by the cube speed
+    cube.userData.direction = new THREE.Vector3(
+        (Math.random() * 2 - 1) * cubeSpeed,
+        (Math.random() * 2 - 1) * cubeSpeed,
+        (Math.random() * 2 - 1) * cubeSpeed,
+    );
+
+    // Randomly rotating the cube
+    cube.userData.rotation = new THREE.Vector3(
+        (Math.random() * 2 - 1) * cubeRotationSpeed,
+        (Math.random() * 2 - 1) * cubeRotationSpeed,
+        (Math.random() * 2 - 1) * cubeRotationSpeed,
+    );
+
 
     return cube;
 }
