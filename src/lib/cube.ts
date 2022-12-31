@@ -1,18 +1,15 @@
-import * as THREE from 'three';
+import * as THREE from 'three'
+import { BufferGeometryUtils } from 'three';
 
-const cubeSpeed = 0.04;
-const cubeRotationSpeed = 0.01;
-
-export const createFace = (color: string) => {
+const createFace = (color: string) => {
 
     // Creating a colored plane of size 1x1 
-    const geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({
+    const planeGeometry = new THREE.PlaneGeometry(1, 1, 1, 1);
+    const planeMaterial = new THREE.MeshBasicMaterial({
         color: color,
         side: THREE.DoubleSide
     });
-    const face = new THREE.Mesh(geometry, material);
-
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
 
     // Creating a normal line from (0, 0, 0) to (0, 0, 1) 
     const start = new THREE.Vector3(0, 0, 0);
@@ -23,9 +20,12 @@ export const createFace = (color: string) => {
 
     const line = new THREE.Line(lineGeometry, lineMaterial);
 
-    // Creating a group to be able to merge the face and the line
+    plane.geometry.computeBoundingBox();
+    line.geometry.computeBoundingBox();
+
+    // Creating a group to merge the plane and the line
     const group = new THREE.Group();
-    group.add(face);
+    group.add(plane);
     group.add(line);
 
     return group;
@@ -52,7 +52,6 @@ export const createCube = () => {
     topFace.position.set(0, 0.5, 0);
     bottomFace.position.set(0, -0.5, 0);
 
-
     // Rotating the cube faces
     frontFace.rotation.set(0, 0, 0);
     backFace.rotation.set(0, Math.PI, 0);
@@ -63,7 +62,6 @@ export const createCube = () => {
     topFace.rotation.set(-Math.PI / 2, 0, 0);
     bottomFace.rotation.set(Math.PI / 2, 0, 0);
 
-
     // Creating a group and adding the cube faces to it
     const cube = new THREE.Group();
     cube.add(frontFace);
@@ -72,22 +70,6 @@ export const createCube = () => {
     cube.add(rightFace);
     cube.add(topFace);
     cube.add(bottomFace);
-
-    // Giving random direction to the cube (positive or negative)
-    // Generating a random number between -1 and 1 and multiplying it by the cube speed
-    cube.userData.direction = new THREE.Vector3(
-        (Math.random() * 2 - 1) * cubeSpeed,
-        (Math.random() * 2 - 1) * cubeSpeed,
-        (Math.random() * 2 - 1) * cubeSpeed,
-    );
-
-    // Randomly rotating the cube
-    cube.userData.rotation = new THREE.Vector3(
-        (Math.random() * 2 - 1) * cubeRotationSpeed,
-        (Math.random() * 2 - 1) * cubeRotationSpeed,
-        (Math.random() * 2 - 1) * cubeRotationSpeed,
-    );
-
 
     return cube;
 }
