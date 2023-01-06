@@ -1,7 +1,6 @@
 import * as THREE from 'three'
-import { BufferGeometryUtils } from 'three';
 
-const createFace = (color: string) => {
+const createFace = (color: number) => {
 
     // Creating a colored plane of size 1x1 
     const planeGeometry = new THREE.PlaneGeometry(1, 1, 1, 1);
@@ -33,13 +32,13 @@ const createFace = (color: string) => {
 
 export const createCube = () => {
 
-    // Creating the cube faces
-    const frontFace = createFace('red');
-    const backFace = createFace('green');
-    const leftFace = createFace('blue');
-    const rightFace = createFace('yellow');
-    const topFace = createFace('orange');
-    const bottomFace = createFace('purple');
+    // Colors: red, green, blue, yellow, orange, purple
+    const frontFace = createFace(0xff0000);
+    const backFace = createFace(0x00ff00);
+    const leftFace = createFace(0x0000ff);
+    const rightFace = createFace(0xffff00);
+    const topFace = createFace(0xffa500);
+    const bottomFace = createFace(0xff00ff);
 
     // Positioning the cube faces
     // Adding or subtracting 0.5 to all coordinates to center cube at (0, 0, 0)
