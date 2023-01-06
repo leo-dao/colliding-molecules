@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { createCube } from './cube';
 
-const boundingRange = 50;
-const directionSpeed = 0.05;
+const boundingRange = 30;
+const directionSpeed = 0.08;
 const rotationSpeed = 0.01;
 
 const generateDirection = () => {
@@ -47,50 +47,114 @@ export const createCubes = (numberOfCubes: number) => {
 
     for (var i = 0; i < numberOfCubes; i++) {
 
+        // Creating parent group that will hold the original cube and the merged cubes
+        const parent = new THREE.Group();
+
         const cube = createCube();
+
+        // Adding the cube to the parent group
+        parent.add(cube);
 
         // Generating random position for the cube
         // The range is 3 less than the bounding range to ensure the all normals are inside the volume
         const range = boundingRange - 3;
-        cube.position.x = (Math.random() * range - range / 2);
-        cube.position.y = (Math.random() * range - range / 2);
-        cube.position.z = (Math.random() * range - range / 2);
+        parent.position.x = (Math.random() * range - range / 2);
+        parent.position.y = (Math.random() * range - range / 2);
+        parent.position.z = (Math.random() * range - range / 2);
 
-        cube.userData.direction = generateDirection();
-        cube.userData.rotation = generateRotation();
+        parent.userData.direction = generateDirection();
+        parent.userData.rotation = generateRotation();
 
-        cubes.push(cube);
+        cubes.push(parent);
     }
     return cubes;
 }
 
-export const mergeMolecules = (molecule1: THREE.Object3D, molecule2: THREE.Object3D, color: String) => {
+export const mergeMolecules = (
+    molecule1: THREE.Object3D,
+    molecule2: THREE.Object3D,
+    normal1: THREE.Line,
+    normal2: THREE.Line) => {
 
-    // Creating a new group to hold the merged molecules
-    const molecule = new THREE.Group();
 
-    // Adding the two molecules to the group
-    molecule.add(molecule1);
-    molecule.add(molecule2);
+    //  Initializing the rotation values
+    let xRotation = 0;
+    let yRotation = 0;
+    let zRotation = 0;
 
-    // set the position of each molecule to be next to each other 
-    // There is a distance of 3 between the center of two cubes 
-    // 0.5 from cube A to line A, 1 from line A to line B, 0.5 from line B to cube B)
 
-    // However this is only true when the each molecule only contains one cube
+    // Stop the cubes from moving (testing)
+    /* molecule1.userData.direction = new THREE.Vector3(0, 0, 0);
+    molecule2.userData.direction = new THREE.Vector3(0, 0, 0);
+    molecule1.userData.rotation = new THREE.Vector3(0, 0, 0);
+    molecule2.userData.rotation = new THREE.Vector3(0, 0, 0); */
 
-    molecule1.position.x = 0;
-    molecule1.position.y = 0;
-    molecule1.position.z = 0;
 
-    molecule2.position.x = 0;
-    molecule2.position.y = 0;
-    molecule2.position.z = 3;
+    // Rotation values for each color
+    const red = [Math.PI, 0, 0]
+    const orange = [Math.PI, 0, 0]
+    const green = [0, Math.PI, 0]
+    const blue = [0, Math.PI, 0]
+    const yellow = [0, 0, Math.PI]
+    const purple = [0, 0, Math.PI]
 
-    // Generating new rotation and direction for the merged molecule
-    molecule.userData.direction = generateDirection();
-    molecule.userData.rotation = generateRotation();
+    // Get the color of the normal
+    // @ts-ignore
+    const color = normal1.material.color.getHex();
 
-    return molecule;
+    // Rotate the molecule by the correct values
+    switch (color) {
+        case 0xff0000:
+            xRotation = red[0];
+            yRotation = red[1];
+            zRotation = red[2];
+            break;
+        case 0xffa500:
+            xRotation = orange[0];
+            yRotation = orange[1];
+            zRotation = orange[2];
+            break;
+        case 0x00ff00:
+            xRotation = green[0];
+            yRotation = green[1];
+            zRotation = green[2];
+            break;
+        case 0x0000ff:
+            xRotation = blue[0];
+            yRotation = blue[1];
+            zRotation = blue[2];
+            break;
+        case 0xffff00:
+            xRotation = yellow[0];
+            yRotation = yellow[1];
+            zRotation = yellow[2];
+            break;
+        case 0xff00ff:
+            xRotation = purple[0];
+            yRotation = purple[1];
+            zRotation = purple[2];
+            break;
+    }
+
+    // Adding all the cubes of molecule 2 to molecule 1
+    molecule2.children.forEach((cube) => {
+
+        // Adding the cube to the parent group of molecule 1
+        molecule1.add(cube);
+
+
+        // Rotating the cube by the rotation necessary to align normal 1 and normal 2
+        cube.rotation.set(cube.rotation.x + xRotation, cube.rotation.y + yRotation, cube.rotation.z + zRotation);
+
+
+        /* // TEST: Just to see the rotation
+        cube.position.set(cube.position.x + 1, cube.position.y + 1, cube.position.z + 1); */
+
+    }
+    );
+
+    // TODO: 
+    // If any part of the molecule is outside the volume, move it back inside
+
 
 };
