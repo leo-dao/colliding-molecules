@@ -17,6 +17,7 @@ const bounce = (molecule: THREE.Object3D, invisibleVolume: THREE.Mesh) => {
         molecule.userData.direction.x *= -1;
 
         // Moving the molecule back inside the invisible volume if it hits the edge
+        // This handles the case where parts of a newly merged molecule outside the invisible volume
         if (moleculeBox.min.x <= invisibleVolumeBox.min.x) {
             molecule.position.x += invisibleVolumeBox.min.x - moleculeBox.min.x;
         } else {
@@ -45,7 +46,7 @@ const bounce = (molecule: THREE.Object3D, invisibleVolume: THREE.Mesh) => {
     }
 }
 
-export const move = (molecule: THREE.Object3D, invisibleVolume: THREE.Mesh) => {
+export const moveWithinVolume = (molecule: THREE.Object3D, invisibleVolume: THREE.Mesh) => {
 
     // Moving the molecule in the direction it is currently moving
     molecule.position.add(molecule.userData.direction);

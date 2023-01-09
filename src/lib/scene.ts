@@ -7,20 +7,31 @@ export const createScene = () => {
     var scene = new THREE.Scene();
 
     var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 70;
-    camera.position.y = 20;
+    camera.position.z = 10;
+    camera.position.y = 5;
     scene.add(camera);
 
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
+    // Adding orbit controls to move the camera around the scene
     const controls = new OrbitControls(camera, renderer.domElement);
 
     // Limiting camera movement
     controls.enableDamping = true;
     controls.minDistance = 5;
     controls.maxDistance = 70;
+
+
+    // Updating camera aspect ratio on window resize
+    const onWindowResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    window.addEventListener('resize', onWindowResize, false);
 
     return { scene, camera, renderer, controls };
 }

@@ -24,8 +24,8 @@ const createFace = (color: number) => {
 
     // Creating a group to merge the plane and the line
     const group = new THREE.Group();
-    group.add(plane);
-    group.add(line);
+    group.attach(plane);
+    group.attach(line);
 
     return group;
 }
