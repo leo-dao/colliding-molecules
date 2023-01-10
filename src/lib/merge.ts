@@ -1,63 +1,46 @@
 import * as THREE from 'three';
 
-
 // TESTING FUNCTION
-const pause = (molecule1: THREE.Object3D, molecule2: THREE.Object3D) => {
-
+const pause = (molecule1: THREE.Object3D) => {
     molecule1.userData.direction = new THREE.Vector3(0, 0, 0);
-    molecule2.userData.direction = new THREE.Vector3(0, 0, 0);
     molecule1.userData.rotation = new THREE.Vector3(0, 0, 0);
-    molecule2.userData.rotation = new THREE.Vector3(0, 0, 0);
     return;
 };
 
-const rotateMolecules = (
-    molecule1: THREE.Object3D,
-    molecule2Children: THREE.Object3D[],
+const rotateMolecule2 = (
+    molecule2: THREE.Object3D,
     cube1: THREE.Object3D,
+    cube2: THREE.Object3D,
     color: number) => {
 
-
-    const scene = molecule1.parent;
-
-    // Getting world rotation of cube 1 
+    // Getting world rotation of cube 1 and cube 2
     const cube1Quaternion = cube1!.getWorldQuaternion(new THREE.Quaternion());
+    const cube2Quaternion = cube2!.getWorldQuaternion(new THREE.Quaternion());
 
+    // Find the quaternion required to rotate cube2 to be in the same orientation as cube1
+    const quaternionDifference = cube2Quaternion.invert().multiply(cube1Quaternion);
 
-    // Iterating through all cubes of molecule2
-    molecule2Children.forEach((cube: THREE.Object3D) => {
+    // Multiplying all molecule 2 (and therefore all cubes in it) by the quaternion difference
+    molecule2.quaternion.multiply(quaternionDifference);
 
-        // Removing cube from molecule2 and making it a direct child of scene
-        scene!.attach(cube);
+    // Rotating all cubes by PI on the x or y axis depending on the color of the normal
+    if (color === 0xffa500 || color === 0xff00ff) {
 
-        // Setting world quaternion (not local quaternion since cube is now child of scene)
-        cube.setRotationFromQuaternion(cube1Quaternion);
-
-        // Rotating all cubes by PI on the x or y axis depending on the color of the normal
-        if (color === 0xffa500 || color === 0xff00ff) {
-
-            // At this point, cube in mol2 has the the same rotations as cube1 it collided with
-            // We rotate by PI around the X axis to flip the cube upside down (orange and purple area at the top and bottom of cube) and have the normals be linear 
-            cube.rotateX(Math.PI);
-        }
-        else {
-            // Otherwise the cube needs to rotate around the Y axis to have the normals be linear
-            cube.rotateY(Math.PI);
-        }
-
-        // Attaching cubes to molecule 1 but with correct quaternion
-        molecule1.attach(cube)
-    });
-
+        // At this point, cube in mol2 has the the same rotations as cube1 it collided with
+        // We rotate by PI around the X axis to flip the cube upside down (orange and purple area at the top and bottom of cube)
+        // This will make the normals be linear 
+        molecule2.rotateX(Math.PI);
+    }
+    else {
+        // Otherwise the cube needs to rotate around the Y axis to have the normals be linear
+        molecule2.rotateY(Math.PI);
+    }
 }
 
-const positionMolecules = (
-    molecule1: THREE.Object3D,
-    molecule2Children: THREE.Object3D[],
+const positionMolecule2 = (
+    molecule2: THREE.Object3D,
     normal1: THREE.Line,
     normal2: THREE.Line) => {
-
-    const scene = molecule1.parent;
 
     // Getting the origin of the normals
     let normal1Position = normal1.getWorldPosition(new THREE.Vector3());
@@ -67,31 +50,70 @@ const positionMolecules = (
     let normal1Tip = normal1Position.add(normal1.getWorldDirection(new THREE.Vector3()));
     let normal2Tip = normal2Position.add(normal2.getWorldDirection(new THREE.Vector3()));
 
-
     // Getting the difference in x,y,z values between the tip of the normals
     const translation = normal1Tip.clone().sub(normal2Tip);
 
-    // Positioning loop
-    molecule2Children.forEach((cube: THREE.Object3D) => {
+    // Translating molecule2 so that the tip of the normals are in the same position
+    molecule2.position.add(translation);
+};
 
-        // Getting world position of cube
-        let cubePosition = cube.getWorldPosition(new THREE.Vector3());
+const checkNewNormals = (molecule1: THREE.Object3D, molecule2: THREE.Object3D) => {
 
-        // Adding the translation vector to the cube position 
-        cubePosition.add(translation);
+    // Checking if any new normals have been connected (e.g. if 2 molecules of size 2 merge and all 4 cubes now connect)
+    // This is to avoid merging inside a 2 cubes that are connected without directly merging
 
-        // Attaching cube to the scene
-        scene!.attach(cube);
+    // Iterating through all normal lines in molecule 2
+    molecule2.children.forEach((cube: THREE.Object3D) => {
 
-        // Setting its world position 
-        cube.position.set(cubePosition.x, cubePosition.y, cubePosition.z);
+        cube.children.forEach((face: THREE.Object3D) => {
+            const normal = face.children[1]
 
-        // Reattaching it to molecule 1
-        molecule1.attach(cube);
+            // Getting the tip of the normal
+            let normalPosition = normal.getWorldPosition(new THREE.Vector3());
+            let normalTip = normalPosition.add(normal.getWorldDirection(new THREE.Vector3()));
 
+            // Looping through all normals in molecule1
+            molecule1.children.forEach((cube: THREE.Object3D) => {
+
+                cube.children.forEach((face: THREE.Object3D) => {
+
+                    const normal = face.children[1]
+
+                    // Getting the tip of the normal
+                    let normalPosition = normal.getWorldPosition(new THREE.Vector3());
+                    let normalTip2 = normalPosition.add(normal.getWorldDirection(new THREE.Vector3()));
+
+                    // Checking if the tip of the normal is within 0.1 of the tip of any other normal
+                    if (normalTip.distanceTo(normalTip2) < 0.1) {
+
+                        // Setting to true if it wasn't already
+                        if (!normal.userData.connected) {
+                            normal.userData.connected = true;
+                        }
+                    }
+                })
+            }
+            )
+
+        });
+    });
+};
+
+const attachMolecules = (molecule1: THREE.Object3D, molecule2: THREE.Object3D) => {
+
+    // Copying all cubes in array to iterate over them and remove them all
+    const molecule2Children: THREE.Object3D[] = [];
+
+    molecule2.children.forEach((cube: THREE.Object3D) => {
+        molecule2Children.push(cube)
     });
 
-}
+    // Attaching all cubes to molecule1
+    molecule2Children.forEach((cube: THREE.Object3D) => {
+        molecule1.attach(cube);
+    });
+
+};
 
 export const mergeMolecules = (
     molecule1: THREE.Object3D,
@@ -122,23 +144,28 @@ export const mergeMolecules = (
         let temp2 = normal1;
         normal1 = normal2;
         normal2 = temp2;
-    }
+    };
 
     // Getting the cube that molecule2 is merging into
-    let cube1 = normal1.parent!.parent;
+    const cube1 = normal1.parent!.parent;
+    const cube2 = normal2.parent!.parent;
 
     // Getting color of the colliding normal/face
     // @ts-ignore
     const color = normal1.material.color.getHex();
 
-    // Copying molecule2 cubes array to save it
-    const molecule2Children = molecule2.children.slice();
-
     // Rotating the cubes into the correct orientation
-    rotateMolecules(molecule1, molecule2Children, cube1!, color);
+    rotateMolecule2(molecule2, cube1!, cube2!, color);
 
     // Positioning the cubes so that the normals align
-    positionMolecules(molecule1, molecule2Children, normal1, normal2);
+    positionMolecule2(molecule2, normal1, normal2);
+
+    // Checking if any new normals have been connected and updating the connected property if so
+    checkNewNormals(molecule1, molecule2);
+
+    // Attaching all cubes in molecule2 to molecule1
+    attachMolecules(molecule1, molecule2);
+
 
     return;
 };
