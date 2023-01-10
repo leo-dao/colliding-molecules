@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeMolecules } from './geometry';
+import { mergeMolecules } from './merge';
 
 // Storing bounding box and color of the faces and lines
 interface BoundingBox {

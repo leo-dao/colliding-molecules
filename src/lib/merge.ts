@@ -9,62 +9,28 @@ const pause = (molecule1: THREE.Object3D, molecule2: THREE.Object3D) => {
     molecule1.userData.rotation = new THREE.Vector3(0, 0, 0);
     molecule2.userData.rotation = new THREE.Vector3(0, 0, 0);
     return;
-}
+};
 
-export const mergeMolecules = (
+const rotateMolecules = (
     molecule1: THREE.Object3D,
-    molecule2: THREE.Object3D,
-    normal1: THREE.Line,
-    normal2: THREE.Line,
-    scene: THREE.Scene
-) => {
+    molecule2Children: THREE.Object3D[],
+    cube1: THREE.Object3D,
+    color: number) => {
 
 
-    // Special case where a face/normal hits a face/normal that is already connected to another cube
-    if (normal1.userData.connected || normal2.userData.connected) {
-        return;
-    }
-
-    // Getting the cubes from the parent group
-    let cube1 = normal1.parent!.parent;
-    let cube2 = normal2.parent!.parent;
-
-    // Setting connected to true to prevent that error
-    normal1.userData.connected = true;
-    normal2.userData.connected = true;
-
-    // Molecule 2 is merging into molecule 1
-    if (molecule2.children.length > molecule1.children.length) {
-
-        // Switching the molecules if molecule 2 has more children than molecule 1 so that the smaller molecule is merged into the bigger molecule
-        const temp = molecule1;
-        molecule1 = molecule2;
-        molecule2 = temp;
-
-        // Switching the cubes as 
-        const temp2 = cube1;
-        cube1 = cube2;
-        cube2 = temp2;
-    }
-
-
-    // Getting color of the normal
-    // @ts-ignore
-    const color = normal1.material.color.getHex();
-    console.log(color.toString(16));
+    const scene = molecule1.parent;
 
     // Getting world rotation of cube 1 
     const cube1Quaternion = cube1!.getWorldQuaternion(new THREE.Quaternion());
 
-    // Copying molecule2 cubes array
-    const molecule2Children = molecule2.children.slice();
 
-
+    // Iterating through all cubes of molecule2
     molecule2Children.forEach((cube: THREE.Object3D) => {
 
-        // Setting world quaternion of children of molecule 2 to match that of cube1
-        scene.attach(cube);
+        // Removing cube from molecule2 and making it a direct child of scene
+        scene!.attach(cube);
 
+        // Setting world quaternion (not local quaternion since cube is now child of scene)
         cube.setRotationFromQuaternion(cube1Quaternion);
 
         // Rotating all cubes by PI on the x or y axis depending on the color of the normal
@@ -79,18 +45,19 @@ export const mergeMolecules = (
             cube.rotateY(Math.PI);
         }
 
-        molecule2.attach(cube)
+        // Attaching cubes to molecule 1 but with correct quaternion
+        molecule1.attach(cube)
     });
 
-    //pause(molecule1, molecule2);
+}
 
-    molecule2Children.forEach((cube: THREE.Object3D) => {
+const positionMolecules = (
+    molecule1: THREE.Object3D,
+    molecule2Children: THREE.Object3D[],
+    normal1: THREE.Line,
+    normal2: THREE.Line) => {
 
-        molecule1.attach(cube);
-
-    });
-
-    return
+    const scene = molecule1.parent;
 
     // Getting the origin of the normals
     let normal1Position = normal1.getWorldPosition(new THREE.Vector3());
@@ -101,87 +68,77 @@ export const mergeMolecules = (
     let normal2Tip = normal2Position.add(normal2.getWorldDirection(new THREE.Vector3()));
 
 
-    // Getting the difference between the normals and adding it to the position of molecule 2
-    const diff = normal1Tip.clone().sub(normal2Tip);
-    //console.log('Normal 1:', normal1Tip, 'Normal 2:', normal2Tip, "Difference", diff);
+    // Getting the difference in x,y,z values between the tip of the normals
+    const translation = normal1Tip.clone().sub(normal2Tip);
 
-    //pause(molecule1, molecule2);
-
-    // Adding the cubes of molecule 2 to molecule 1
-    molecule2.children.forEach((cube: THREE.Object3D) => {
-
+    // Positioning loop
+    molecule2Children.forEach((cube: THREE.Object3D) => {
 
         // Getting world position of cube
         let cubePosition = cube.getWorldPosition(new THREE.Vector3());
 
-        // Add diff to that position so it 
-        cubePosition.add(diff);
+        // Adding the translation vector to the cube position 
+        cubePosition.add(translation);
 
-        // Removing the cube from molecule 2 and adding it to the scene to set its world position
-        //molecule2.remove(cube);
+        // Attaching cube to the scene
+        scene!.attach(cube);
 
-        //scene.attach(cube);
+        // Setting its world position 
+        cube.position.set(cubePosition.x, cubePosition.y, cubePosition.z);
 
-        // Setting world position since it is direct child of scene
-        //cube.position.set(cubePosition.x, cubePosition.y, cubePosition.z);
-
-        // molecule1.attach(cube);
-
+        // Reattaching it to molecule 1
+        molecule1.attach(cube);
 
     });
 
+}
 
+export const mergeMolecules = (
+    molecule1: THREE.Object3D,
+    molecule2: THREE.Object3D,
+    normal1: THREE.Line,
+    normal2: THREE.Line
+) => {
 
-    /*     normal1Position = normal1.getWorldPosition(new THREE.Vector3());
-        normal2Position = normal2.getWorldPosition(new THREE.Vector3());
-    
-        // Getting the tip of the normals
-        normal1Tip = normal1Position.add(normal1.getWorldDirection(new THREE.Vector3()));
-        normal2Tip = normal2Position.add(normal2.getWorldDirection(new THREE.Vector3()));
-    
-        console.log('Normal 1 after', normal1Tip, normal2Tip) */
+    // Special case where a face/normal hits a face/normal that is already connected to another cube
+    if (normal1.userData.connected || normal2.userData.connected) {
+        // Not merging
+        return;
+    }
 
+    // Setting connected to true to prevent error just above
+    normal1.userData.connected = true;
+    normal2.userData.connected = true;
+
+    // The algorithm assumes that molecule1 is the bigger molecule
+    // Switching the molecules if molecule 2 has more children than molecule 1 so that the smaller molecule is merged into the bigger molecule
+    if (molecule2.children.length > molecule1.children.length) {
+
+        // Switching 
+        let temp = molecule1;
+        molecule1 = molecule2;
+        molecule2 = temp;
+
+        let temp2 = normal1;
+        normal1 = normal2;
+        normal2 = temp2;
+    }
+
+    // Getting the cube that molecule2 is merging into
+    let cube1 = normal1.parent!.parent;
+
+    // Getting color of the colliding normal/face
+    // @ts-ignore
+    const color = normal1.material.color.getHex();
+
+    // Copying molecule2 cubes array to save it
+    const molecule2Children = molecule2.children.slice();
+
+    // Rotating the cubes into the correct orientation
+    rotateMolecules(molecule1, molecule2Children, cube1!, color);
+
+    // Positioning the cubes so that the normals align
+    positionMolecules(molecule1, molecule2Children, normal1, normal2);
 
     return;
 };
-
-/*     const transformations = {
-        0xff0000: {
-            rotation: [molecule2.position.x + Math.PI, molecule2!.position.y, molecule2!.position.z],
-            position: [molecule2!.position.x, molecule2!.position.y, molecule2!.position.z + 3]
-        },
-        0xffa500: {
-            rotation: [molecule2!.position.x + Math.PI, molecule2!.position.y, molecule2!.position.z],
-            position: [molecule2!.position.x, molecule2!.position.y + 3, molecule2!.position.z]
-        },
-        0x00ff00: {
-            rotation: [molecule2!.position.x, molecule2!.position.y + Math.PI, molecule2!.position.z],
-            position: [molecule2!.position.x, molecule2!.position.y, molecule2!.position.z - 3]
-        },
-        0x0000ff: {
-            rotation: [molecule2!.position.x, molecule2!.position.y + Math.PI, molecule2!.position.z],
-            position: [molecule2!.position.x - 3, molecule2!.position.y, molecule2!.position.z]
-        },
-        0xffff00: {
-            rotation: [molecule2!.position.x, molecule2!.position.y, molecule2!.position.z + Math.PI],
-            position: [molecule2!.position.x + 3, molecule2!.position.y, molecule2!.position.z]
-        },
-        0xff00ff: {
-            rotation: [molecule2!.position.x, molecule2!.position.y, molecule2!.position.z + Math.PI],
-            position: [molecule2!.position.x, molecule2!.position.y - 3, molecule2!.position.z]
-        }
-    } */
-
-    //molecule2.rotation.set(...transformations[color].rotation);
-    //molecule2.position.set(...transformations[color].position);
-
-
-/*         // Get the color of the normal
-        // @ts-ignore
-        const color = normal1.material.color.getHex();
-        console.log(color.toString(16));
-        // Set the rotation and position of the cube based on the color of the normal
-        // @ts-ignore
-        cube2?.rotation.set(...transformations[color].rotation);
-        // @ts-ignore
-        cube2?.position.set(...transformations[color].position); */
