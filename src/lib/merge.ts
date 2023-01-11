@@ -1,12 +1,5 @@
 import * as THREE from 'three';
 
-// TESTING FUNCTION
-const pause = (molecule1: THREE.Object3D) => {
-    molecule1.userData.direction = new THREE.Vector3(0, 0, 0);
-    molecule1.userData.rotation = new THREE.Vector3(0, 0, 0);
-    return;
-};
-
 const rotateMolecule2 = (
     molecule2: THREE.Object3D,
     cube1: THREE.Object3D,
@@ -15,7 +8,11 @@ const rotateMolecule2 = (
 
     // Getting world rotation of cube 1 and cube 2
     const cube1Quaternion = cube1!.getWorldQuaternion(new THREE.Quaternion());
-    const cube2Quaternion = cube2!.getWorldQuaternion(new THREE.Quaternion());
+    let cube2Quaternion = cube2!.getWorldQuaternion(new THREE.Quaternion());
+
+
+    // BUG: Quaternion difference doesn't have the correct value to align molecule2
+    // when cube1 and cube2 aren't the original cubes in their respective molecules
 
     // Find the quaternion required to rotate cube2 to be in the same orientation as cube1
     const quaternionDifference = cube2Quaternion.invert().multiply(cube1Quaternion);
@@ -35,7 +32,7 @@ const rotateMolecule2 = (
         // Otherwise the cube needs to rotate around the Y axis to have the normals be linear
         molecule2.rotateY(Math.PI);
     }
-}
+};
 
 const positionMolecule2 = (
     molecule2: THREE.Object3D,
@@ -165,7 +162,6 @@ export const mergeMolecules = (
 
     // Attaching all cubes in molecule2 to molecule1
     attachMolecules(molecule1, molecule2);
-
 
     return;
 };
