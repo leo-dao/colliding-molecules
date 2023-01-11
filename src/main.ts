@@ -13,7 +13,7 @@ const invisibleVolume = createInvisibleVolume();
 scene.add(invisibleVolume);
 
 // Adding the molecules (starting off as cubes) to the scene
-const molecules = createCubes(2);
+const molecules = createCubes(10);
 molecules.forEach(molecule => scene.add(molecule));
 
 
