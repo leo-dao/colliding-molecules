@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { createCube } from './cube';
 
-const boundingRange = 10;
-const directionSpeed = 0.1;
+const boundingRange = 30;
+const directionSpeed = 0.08;
 const rotationSpeed = 0.01;
 
 const generateDirection = () => {
@@ -19,6 +19,7 @@ const generateDirection = () => {
 
 const generateRotation = () => {
 
+    // Same as direction but for rotation
     const rotation = new THREE.Vector3(
         (Math.random() * 2 - 1) * rotationSpeed,
         (Math.random() * 2 - 1) * rotationSpeed,
@@ -33,16 +34,19 @@ export const createInvisibleVolume = () => {
     // Creating a box of size 50x50x50
     const geometry = new THREE.BoxGeometry(boundingRange, boundingRange, boundingRange);
 
-    // Leaving fireframe for easier debugging
+    // Leaving fireframe to visualize the volume
     const material = new THREE.MeshBasicMaterial({ wireframe: true })
 
     const invisibleVolume = new THREE.Mesh(geometry, material);
+
+    invisibleVolume.name = 'invisibleVolume';
 
     return invisibleVolume;
 }
 
 export const createCubes = (numberOfCubes: number) => {
 
+    // Initializing empty array to hold parent containers of cubes
     const cubes = [];
 
     for (var i = 0; i < numberOfCubes; i++) {
@@ -67,5 +71,6 @@ export const createCubes = (numberOfCubes: number) => {
 
         cubes.push(parent);
     }
+
     return cubes;
 };

@@ -67,15 +67,17 @@ const checkBoundingBoxes = (molecule1: THREE.Object3D, molecule2: THREE.Object3D
 
     b1.faceBoxes.forEach((faceBox1: BoundingBox) => {
 
-        // Checking if face boxes of molecule 1 are intersecting with face boxes of molecule 2
+        // Checking if face boxes of molecule 1 are intersecting with face boxes of molecule 2 of same color
         b2.faceBoxes.forEach((faceBox2: BoundingBox) => {
             if (faceBox1.box.intersectsBox(faceBox2.box) && faceBox1.color.equals(faceBox2.color)) {
 
+                // Merging if the molecules have not already merged
                 if (!merged) {
                     merged = true;
                     return mergeMolecules(molecule1, molecule2, faceBox1.line, faceBox2.line);
                 }
             }
+
         })
 
         //checking if face boxes of molecule 1 are intersecting with line boxes of molecule 2
