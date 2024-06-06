@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { createCube } from './cube';
 
-const boundingRange = 30;
-const directionSpeed = 0.08;
+let boundingRange = 30;
+const directionSpeed = 0.1;
 const rotationSpeed = 0.01;
 
 const generateDirection = () => {
@@ -31,7 +31,6 @@ const generateRotation = () => {
 
 export const createInvisibleVolume = () => {
 
-    // Creating a box of size 50x50x50
     const geometry = new THREE.BoxGeometry(boundingRange, boundingRange, boundingRange);
 
     // Leaving fireframe to visualize the volume
@@ -74,3 +73,7 @@ export const createCubes = (numberOfCubes: number) => {
 
     return cubes;
 };
+
+export function updateBoundingRange(newRange: number) {
+    boundingRange = newRange;
+}
