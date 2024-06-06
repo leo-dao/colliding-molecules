@@ -1,71 +1,79 @@
 import * as THREE from 'three';
+import { GUI } from 'dat.gui';
 import { createScene } from './lib/scene';
-import { createInvisibleVolume } from './lib/geometry';
-import { createCubes } from './lib/geometry';
-import { rotate, moveWithinVolume } from './lib/animation';
+import { createCubes, updateBoundingRange, createInvisibleVolume } from './lib/geometry';
+import { rotate, moveWithinVolume, updateDirectionSpeed, updateRotationSpeed } from './lib/animation';
 import { checkCollision } from './lib/collision';
 import { checkEmpty, checkMerge } from './lib/insertAtoms';
 
 const { scene, camera, renderer, controls } = createScene();
+const gui = new GUI();
+const molecules = createCubes(10);
 
-// Adding the invisible volume to the scene
-const invisibleVolume = createInvisibleVolume();
+export const guiControls = {
+  'Number of Cubes': 10,
+  'Bounding Range': 30,
+  'Direction Multiplier': 100,
+  'Rotation Multiplier': 100,
+};
+
+let invisibleVolume = createInvisibleVolume();
 scene.add(invisibleVolume);
 
-// Adding the molecules (starting off as cubes) to the scene
-const molecules = createCubes(10);
-molecules.forEach(molecule => scene.add(molecule));
+const setupGUI = () => {
+  gui.width = 300;
+  gui.add(guiControls, 'Number of Cubes', 1, 100).onChange(updateMolecules);
+  gui.add(guiControls, 'Bounding Range', 10, 100).onChange(updateVolume);
+  gui.add(guiControls, 'Direction Multiplier', 0, 200).onChange(() => updateDirectionSpeed(guiControls['Direction Multiplier'] * 0.01));
+  gui.add(guiControls, 'Rotation Multiplier', 0, 200).onChange(() => updateRotationSpeed(guiControls['Rotation Multiplier'] * 0.01));
+};
 
+const updateMolecules = () => {
+  molecules.forEach(molecule => scene.remove(molecule));
+  const newMolecules = createCubes(guiControls['Number of Cubes']);
+  newMolecules.forEach(molecule => scene.add(molecule));
+  molecules.splice(0, molecules.length, ...newMolecules);
+};
 
-// OnClick to add new cubes
+const updateVolume = () => {
+  updateBoundingRange(guiControls['Bounding Range']);
+  scene.remove(invisibleVolume);
+  invisibleVolume = createInvisibleVolume();
+  scene.add(invisibleVolume);
+};
+
 const onClick = (event: MouseEvent) => {
-
   const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-
-  // Getting normalized mouse coordinates
-  mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
-  mouse.y = - (event.clientY / renderer.domElement.clientHeight) * 2 + 1;
-
-  // Getting the intersecting objects
+  const mouse = new THREE.Vector2((event.clientX / renderer.domElement.clientWidth) * 2 - 1, -(event.clientY / renderer.domElement.clientHeight) * 2 + 1);
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(scene.children) as THREE.Intersection[];
-
-  // Checking if the click is on an empty space or on a cube and inserting in scene accordingly
   checkEmpty(intersects, molecules, scene);
   checkMerge(intersects, molecules, scene);
 };
 
-// Adding event listener for shift key to either add or remove the onClick event listener
-// So that new cubes can only be insert when holding down shift
+const toggleOnClickEvent = (enable: boolean) => {
+  window[enable ? 'addEventListener' : 'removeEventListener']('click', onClick, false);
+};
+
 window.addEventListener('keydown', (event: KeyboardEvent) => {
-  if (event.key === 'Shift') {
-    window.addEventListener('click', onClick, false);
-  }
+  if (event.key === 'Shift') toggleOnClickEvent(true);
 });
 
 window.addEventListener('keyup', (event: KeyboardEvent) => {
-  if (event.key === 'Shift') {
-    window.removeEventListener('click', onClick, false);
-  }
+  if (event.key === 'Shift') toggleOnClickEvent(false);
 });
 
-// Rendering the scene
 const animate = () => {
-
   requestAnimationFrame(animate);
-
-  // Rotating and moving molecules in the volume
   molecules.forEach(molecule => {
     rotate(molecule);
     moveWithinVolume(molecule, invisibleVolume);
   });
-
-  // Checking if any molecules have collided with the right color and merging them accordingly
   checkCollision(molecules);
-
   controls.update();
   renderer.render(scene, camera);
-}
+};
 
+setupGUI();
+molecules.forEach(molecule => scene.add(molecule));
 animate();
