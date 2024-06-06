@@ -1,0 +1,33 @@
+body {
+    margin: 0; 
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+.infoBox {
+    position: fixed;
+    top: 10px;
+    background: rgb(255, 255, 255, 0.8);
+    padding: 10px;
+    margin: 10px;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+
+#commandPanel {
+    left: 10px;
+}
+
+#guiInfo {
+    right: 25%;
+    width: 200px;
+}
+
+.command-option {
+    background-color: #f0f0f0; 
+    color: #000000;
+    padding: 2px 4px; 
+    border-radius: 3px;
+    font-family: monospace; 
+}

@@ -4,16 +4,18 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link rel="stylesheet" href="index.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Colliding Molecules</title>
 </head>
 
 <body>
-  <style>
-    body {
-      margin: 0;
-    }
-  </style>
+  <div class="infoBox" id="commandPanel">
+    Hold <span class="command-option">Shift and Click</span> to create new cubes randomly within the bounding box.
+    <br />
+    Click on an existing cube or molecule's face/normal to merge a new cube with it.
+  </div>
+  <div class="infoBox" id="guiInfo"> Changing the number of cubes will reset the scene!</div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 
